@@ -1,0 +1,35 @@
+# --- Import necessary libraries ---
+from sklearn.datasets import load_diabetes
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+# --- Load a numerical dataset ---
+data = load_diabetes()
+X = data.data
+y = data.target
+
+# --- Split dataset into training and testing sets ---
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# --- Train a Decision Tree model with no depth limit (likely to overfit) ---
+model = DecisionTreeRegressor(max_depth=None, random_state=42)
+model.fit(X_train, y_train)
+
+# --- Make predictions ---
+train_pred = model.predict(X_train)
+test_pred = model.predict(X_test)
+
+# --- Calculate Mean Squared Error (MSE) ---
+train_mse = mean_squared_error(y_train, train_pred)
+test_mse = mean_squared_error(y_test, test_pred)
+
+# --- Display results ---
+print("Training MSE:", train_mse)
+print("Testing MSE:", test_mse)
+
+# --- Check for overfitting ---
+if train_mse < test_mse:
+    print("\n✅ The model is overfitting: It performs well on training data but poorly on testing data.")
+else:
+    print("\n✅ The model is not overfitting.")
