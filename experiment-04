@@ -1,0 +1,40 @@
+# --- Import necessary libraries ---
+from sklearn.datasets import load_breast_cancer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# --- Load a numerical dataset ---
+data = load_breast_cancer()
+X = data.data
+y = data.target
+
+# --- Split dataset into training and testing sets ---
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# --- Create and train the Logistic Regression model ---
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+
+# --- Make predictions ---
+y_pred = model.predict(X_test)
+
+# --- Evaluate the model performance ---
+accuracy = accuracy_score(y_test, y_pred)
+cm = confusion_matrix(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+
+# --- Display results ---
+print("Accuracy of Logistic Regression Model:", accuracy)
+print("\nConfusion Matrix:\n", cm)
+print("\nClassification Report:\n", report)
+
+# --- Plot confusion matrix ---
+plt.figure(figsize=(5,4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel('Predicted Labels')
+plt.ylabel('Actual Labels')
+plt.title('Confusion Matrix - Logistic Regression')
+plt.show()
