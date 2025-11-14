@@ -1,0 +1,57 @@
+import numpy as np
+from sklearn.neural_network import BernoulliRBM
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.datasets import mnist
+# Load MNIST
+(X_train_full, y_train_full), (X_test_full, y_test_full) = mnist.load_data()
+X_train_flat = X_train_full.reshape(-1, 784) / 255.0
+X_test_flat  = X_test_full.reshape(-1, 784) / 255.0
+X_train_seq = X_train_full.reshape(-1, 28, 28) / 255.0
+X_test_seq  = X_test_full.reshape(-1, 28, 28) / 255.0
+# ---------------- RBM ----------------
+print("\n============ RBM Training ============")
+scaler = MinMaxScaler()
+X_train_scaled = scaler.fit_transform(X_train_flat)
+X_test_scaled  = scaler.transform(X_test_flat)
+rbm = BernoulliRBM(n_components=128, learning_rate=0.01, n_iter=5, batch_size=100)
+rbm.fit(X_train_scaled)
+def rbm_reconstruct(rbm, X):
+    hidden = rbm.transform(X)
+    visible = hidden @ rbm.components_
+    visible += rbm.intercept_visible_
+    visible = 1 / (1 + np.exp(-visible))
+    return visible
+X_recon = rbm_reconstruct(rbm, X_test_scaled)
+rbm_error = np.mean((X_test_scaled - X_recon) ** 2)
+print(f"RBM Reconstruction Error: {rbm_error:.6f}")
+# ---------------- RNN ----------------
+print("\n============ RNN Training ============")
+rnn_model = models.Sequential([
+    layers.SimpleRNN(128),
+    layers.Dense(10, activation='softmax')
+])
+rnn_model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+rnn_model.fit(X_train_seq, y_train_full, epochs=3, batch_size=128, verbose=1)
+rnn_loss, rnn_acc = rnn_model.evaluate(X_test_seq, y_test_full, verbose=0)
+print(f"RNN Test Accuracy: {rnn_acc:.4f}")
+# ---------------- LSTM ----------------
+print("\n============ LSTM Training ============")
+lstm_model = models.Sequential([
+    layers.LSTM(128),
+    layers.Dense(10, activation='softmax')
+])
+lstm_model.compile(optimizer='adam',
+                   loss='sparse_categorical_crossentropy',
+                   metrics=['accuracy'])
+lstm_model.fit(X_train_seq, y_train_full, epochs=3, batch_size=128, verbose=1)
+lstm_loss, lstm_acc = lstm_model.evaluate(X_test_seq, y_test_full, verbose=0)
+print(f"LSTM Test Accuracy: {lstm_acc:.4f}")
+# ---------------- Summary ----------------
+print("\n============ FINAL RESULTS ============")
+print(f"RBM Reconstruction Error : {rbm_error:.6f}")
+print(f"RNN Test Accuracy        : {rnn_acc:.4f}")
+print(f"LSTM Test Accuracy       : {lstm_acc:.4f}\n")
