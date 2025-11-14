@@ -1,0 +1,30 @@
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras import layers
+# Load data
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train/255.0, x_test/255.0
+# Hyperparameters to tune
+learning_rates = [0.001, 0.01]
+neurons = [32, 64]
+activations = ['relu', 'tanh']
+results = []
+for lr in learning_rates:
+    for n in neurons:
+        for act in activations:
+            model = tf.keras.Sequential([
+                layers.Flatten(input_shape=(28,28)),
+                layers.Dense(n, activation=act),
+                layers.Dense(10, activation='softmax')
+            ])
+            model.compile(optimizer=tf.keras.optimizers.Adam(lr),
+                          loss='sparse_categorical_crossentropy',
+                          metrics=['accuracy'])
+            history = model.fit(x_train, y_train, epochs=3, batch_size=128,
+                                verbose=0)
+            test_loss, test_acc = model.evaluate(x_test, y_test, verbose=0)
+            results.append((lr, n, act, test_acc))
+            print(f"LR={lr}, Neurons={n}, Act={act} --> Accuracy={test_acc:.4f}")
+print("\nFinal Results:")
+for r in results:
+    print(r)
