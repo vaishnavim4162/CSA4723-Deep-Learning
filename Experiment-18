@@ -1,0 +1,61 @@
+# Import libraries
+import numpy as np
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.optimizers import Adam, SGD, RMSprop
+from tensorflow.keras.utils import to_categorical
+# Step 1: Load CIFAR-10 (use first two classes for binary classification)
+(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+# Use only classes 0 (airplane) and 1 (automobile)
+X_train = X_train[(y_train.flatten() == 0) | (y_train.flatten() == 1)]
+y_train = y_train[(y_train.flatten() == 0) | (y_train.flatten() == 1)]
+X_test = X_test[(y_test.flatten() == 0) | (y_test.flatten() == 1)]
+y_test = y_test[(y_test.flatten() == 0) | (y_test.flatten() == 1)]
+# Step 2: Normalize and one-hot encode
+X_train, X_test = X_train / 255.0, X_test / 255.0
+y_train, y_test = to_categorical(y_train, 2), to_categorical(y_test, 2)
+# Step 3: Define function to create CNN model
+def build_cnn(activation='relu', optimizer='adam', lr=0.001):
+    model = Sequential([
+        Conv2D(32, (3,3), activation=activation, input_shape=(32,32,3)),
+        MaxPooling2D((2,2)),
+        Conv2D(64, (3,3), activation=activation),
+        MaxPooling2D((2,2)),
+        Flatten(),
+        Dense(128, activation=activation),
+        Dropout(0.3),
+        Dense(2, activation='softmax')
+    ])
+    # Choose optimizer dynamically
+    if optimizer == 'adam':
+        opt = Adam(learning_rate=lr)
+    elif optimizer == 'sgd':
+        opt = SGD(learning_rate=lr)
+    else:
+        opt = RMSprop(learning_rate=lr)
+    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
+# Step 4: Different hyperparameter sets to test
+settings = [
+    ('relu', 'adam', 0.001, 32),
+    ('relu', 'sgd', 0.01, 64),
+    ('tanh', 'adam', 0.0005, 32),
+    ('sigmoid', 'rmsprop', 0.001, 128)
+]
+results = []
+# Step 5: Train and evaluate each configuration
+for activation, optimizer, lr, batch_size in settings:
+    print(f"\nTraining with activation={activation}, optimizer={optimizer}, lr={lr}, batch_size={batch_size}")
+    model = build_cnn(activation, optimizer, lr)
+    history = model.fit(X_train, y_train, epochs=5, batch_size=batch_size,
+                        validation_data=(X_test, y_test), verbose=1)
+    test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
+    results.append((activation, optimizer, lr, batch_size, round(test_acc*100, 2)))
+# Step 6: Display summary results
+print("\n===== Summary of Results =====")
+print("Activation | Optimizer | Learning Rate | Batch Size | Accuracy (%)")
+for r in results:
+    print(f"{r[0]:10} | {r[1]:9} | {r[2]:14} | {r[3]:10} | {r[4]}")
+
+
